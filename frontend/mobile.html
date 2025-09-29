@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS Ops Center - Mobile</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+        
+        .container { max-width: 100%; }
+        
+        .header {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 1.8em;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 5px;
+        }
+        
+        .status {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(76, 175, 80, 0.1);
+            border-radius: 20px;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .cards {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .card {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .metric {
+            text-align: center;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 10px;
+        }
+        
+        .metric-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .metric-label {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .chart-mini {
+            height: 150px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+        }
+        
+        .recommendations {
+            margin-top: 20px;
+        }
+        
+        .recommendation {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            border-left: 4px solid #f39c12;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+        
+        .recommendation.high {
+            background: linear-gradient(135deg, #f8d7da, #fab1a0);
+            border-color: #e74c3c;
+        }
+        
+        .refresh-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            width: 100%;
+            margin-top: 15px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 AWS Ops Center</h1>
+            <p>Multi-Agent AI Platform</p>
+            <div class="status">
+                <div class="status-dot"></div>
+                <span>System Online</span>
+            </div>
+        </div>
+
+        <div class="cards">
+            <!-- Cost Card -->
+            <div class="card">
+                <h3>💰 Cost Overview</h3>
+                <div class="metrics">
+                    <div class="metric">
+                        <div class="metric-value" id="usage-cost">$0</div>
+                        <div class="metric-label">Usage</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="net-cost">$0</div>
+                        <div class="metric-label">Net Cost</div>
+                    </div>
+                </div>
+                <div class="chart-mini" id="cost-chart">
+                    📊 Cost Breakdown
+                </div>
+            </div>
+
+            <!-- Resources Card -->
+            <div class="card">
+                <h3>🗺️ Resources</h3>
+                <div class="metrics">
+                    <div class="metric">
+                        <div class="metric-value" id="total-resources">0</div>
+                        <div class="metric-label">Resources</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="accounts">0</div>
+                        <div class="metric-label">Accounts</div>
+                    </div>
+                </div>
+                <div class="chart-mini" id="resource-chart">
+                    📦 Resource Types
+                </div>
+            </div>
+
+            <!-- Health Card -->
+            <div class="card">
+                <h3>🏗️ Infrastructure Health</h3>
+                <div class="metrics">
+                    <div class="metric">
+                        <div class="metric-value" id="security">0</div>
+                        <div class="metric-label">Security</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="reliability">0</div>
+                        <div class="metric-label">Reliability</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommendations -->
+        <div class="card recommendations">
+            <h3>🎯 AI Recommendations</h3>
+            <div id="recommendations">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading recommendations...</p>
+                </div>
+            </div>
+            <button class="refresh-btn" onclick="refreshData()">🔄 Refresh Data</button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+
+        async function loadData() {
+            try {
+                const response = await fetch(`${API_BASE}/orchestrate/full-analysis`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateUI(data);
+                } else {
+                    showError('Failed to load data');
+                }
+            } catch (error) {
+                showError('Connection failed');
+            }
+        }
+
+        function updateUI(data) {
+            // Update cost data
+            const costData = data.results?.cost_analysis;
+            if (costData) {
+                document.getElementById('usage-cost').textContent = `$${costData.total_usage_cost || 0}`;
+                document.getElementById('net-cost').textContent = `$${costData.total_net_cost || 0}`;
+            }
+
+            // Update resource data
+            const opsData = data.results?.operations_analysis;
+            if (opsData) {
+                document.getElementById('total-resources').textContent = opsData.total_resources || 0;
+                document.getElementById('accounts').textContent = 
+                    opsData.organization_context?.total_accounts || 0;
+            }
+
+            // Update health data
+            const infraData = data.results?.infrastructure_assessment;
+            if (infraData) {
+                document.getElementById('security').textContent = infraData.security_score || 0;
+                document.getElementById('reliability').textContent = infraData.reliability_score || 0;
+            }
+
+            // Update recommendations
+            const recommendations = data.coordinated_recommendations || [];
+            const container = document.getElementById('recommendations');
+            
+            if (recommendations.length > 0) {
+                container.innerHTML = recommendations.slice(0, 3).map(rec => `
+                    <div class="recommendation ${rec.severity || 'medium'}">
+                        <strong>${rec.title || 'Recommendation'}</strong>
+                        <p>${rec.description || rec.message || 'Optimize your AWS resources'}</p>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = '<p>No recommendations available</p>';
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('recommendations').innerHTML = `
+                <div class="recommendation high">
+                    <strong>⚠️ Error</strong>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+
+        async function refreshData() {
+            const btn = document.querySelector('.refresh-btn');
+            btn.textContent = '🔄 Loading...';
+            btn.disabled = true;
+            
+            await loadData();
+            
+            btn.textContent = '🔄 Refresh Data';
+            btn.disabled = false;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', loadData);
+    </script>
+</body>
+</html>

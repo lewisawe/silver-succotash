@@ -1,0 +1,9 @@
+bedrock-agentcore
+boto3
+typing-extensions
+pydantic
+python-dotenv
+flask
+flask-cors
+pytest
+pytest-mock

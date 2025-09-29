@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS Operations Command Center</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 30px; text-align: center; }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .header p { font-size: 1.2em; opacity: 0.9; }
+        .actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .action-card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s; }
+        .action-card:hover { transform: translateY(-2px); box-shadow: 0 8px 15px rgba(0,0,0,0.2); }
+        .action-card h3 { color: #333; margin-bottom: 10px; font-size: 1.3em; }
+        .action-card p { color: #666; line-height: 1.5; }
+        .results { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-top: 20px; }
+        .loading { text-align: center; padding: 40px; color: #666; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .metric { display: inline-block; background: #f8f9fa; padding: 15px; margin: 10px; border-radius: 8px; text-align: center; min-width: 120px; }
+        .metric-value { font-size: 1.8em; font-weight: bold; color: #667eea; }
+        .metric-label { font-size: 0.9em; color: #666; margin-top: 5px; }
+        .recommendation { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .recommendation.high { background: #f8d7da; border-color: #dc3545; }
+        .recommendation.medium { background: #d1ecf1; border-color: #17a2b8; }
+        .services-used { background: #d4edda; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        .agent-info { font-size: 0.9em; color: #666; margin-top: 10px; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 AWS Operations Command Center</h1>
+            <p>Multi-Agent AWS Analysis & Optimization Platform</p>
+        </div>
+
+        <div class="actions">
+            <div class="action-card" onclick="runFullAnalysis()">
+                <h3>🔍 Full AWS Analysis</h3>
+                <p>Comprehensive analysis using all 3 intelligent agents: Cost Intelligence, Operations Intelligence, and Infrastructure Intelligence working together.</p>
+            </div>
+
+            <div class="action-card" onclick="runCostAnalysis()">
+                <h3>💰 Cost Intelligence</h3>
+                <p>Analyze AWS costs, find optimization opportunities, and predict spending trends using real Cost Explorer data.</p>
+            </div>
+
+            <div class="action-card" onclick="runOperationsAnalysis()">
+                <h3>🗺️ Operations Intelligence</h3>
+                <p>Map resource dependencies, analyze performance bottlenecks, and identify operational improvements.</p>
+            </div>
+
+            <div class="action-card" onclick="runArchitectureDesign()">
+                <h3>🏗️ Smart Architecture</h3>
+                <p>Generate production-ready infrastructure with intelligent cost optimization and security best practices.</p>
+            </div>
+        </div>
+
+        <div id="results" class="results" style="display: none;">
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Agents are analyzing your AWS environment...</p>
+            </div>
+            <div id="content"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+
+        async function callAgent(endpoint, payload) {
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                return await response.json();
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+
+        function showResults() {
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('content').innerHTML = '';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function displayResults(data) {
+            hideLoading();
+            const content = document.getElementById('content');
+            
+            if (!data.success) {
+                content.innerHTML = `<div class="recommendation high">❌ Error: ${data.error}</div>`;
+                return;
+            }
+
+            let html = '';
+
+            // Agent info
+            html += `<div class="agent-info">
+                <strong>Agent:</strong> ${data.agent} | 
+                <strong>Timestamp:</strong> ${new Date(data.timestamp).toLocaleString()} | 
+                <strong>Services:</strong> ${data.services_used?.join(', ') || 'N/A'}
+            </div>`;
+
+            // Handle different response types
+            if (data.cost_analysis) {
+                html += renderCostAnalysis(data.cost_analysis);
+            }
+
+            if (data.optimizations) {
+                html += renderOptimizations(data.optimizations);
+            }
+
+            if (data.dependencies || data.total_resources !== undefined) {
+                html += renderOperationsAnalysis(data);
+            }
+
+            if (data.cloudformation_template) {
+                html += renderArchitecture(data);
+            }
+
+            // Multi-agent orchestration results
+            if (data.results) {
+                html += '<h2>🤝 Multi-Agent Coordination Results</h2>';
+                html += `<div class="services-used">
+                    <strong>Agents Involved:</strong> ${data.agent_coordination_summary?.agents_involved || 'Multiple'} | 
+                    <strong>Services Used:</strong> ${data.agent_coordination_summary?.total_services_used?.join(', ') || 'Runtime, Memory, Gateway'}
+                </div>`;
+
+                if (data.overall_scores) {
+                    html += '<h3>📊 Overall Health Scores</h3>';
+                    Object.entries(data.overall_scores).forEach(([key, value]) => {
+                        html += `<div class="metric">
+                            <div class="metric-value">${value}</div>
+                            <div class="metric-label">${key.replace('_', ' ').toUpperCase()}</div>
+                        </div>`;
+                    });
+                }
+
+                if (data.coordinated_recommendations) {
+                    html += '<h3>💡 Coordinated Recommendations</h3>';
+                    data.coordinated_recommendations.forEach(rec => {
+                        html += `<div class="recommendation ${rec.priority}">
+                            <strong>${rec.source}:</strong> ${rec.recommendation}<br>
+                            <small>Impact: ${rec.impact}</small>
+                        </div>`;
+                    });
+                }
+            }
+
+            content.innerHTML = html;
+        }
+
+        function renderCostAnalysis(costData) {
+            let html = '<h2>💰 Cost Analysis</h2>';
+            
+            html += `<div class="metric">
+                <div class="metric-value">$${costData.current_monthly_cost}</div>
+                <div class="metric-label">MONTHLY COST</div>
+            </div>`;
+
+            if (costData.top_services) {
+                html += '<h3>Top Services by Cost</h3>';
+                costData.top_services.forEach(service => {
+                    html += `<div class="metric">
+                        <div class="metric-value">$${service.cost}</div>
+                        <div class="metric-label">${service.service} (${service.percentage}%)</div>
+                    </div>`;
+                });
+            }
+
+            html += `<div class="services-used">Data Source: ${costData.data_source}</div>`;
+            return html;
+        }
+
+        function renderOptimizations(optData) {
+            let html = '<h2>🎯 Optimization Opportunities</h2>';
+            
+            html += `<div class="metric">
+                <div class="metric-value">$${optData.total_potential_monthly_savings}</div>
+                <div class="metric-label">POTENTIAL MONTHLY SAVINGS</div>
+            </div>`;
+
+            if (optData.opportunities) {
+                optData.opportunities.forEach(opp => {
+                    html += `<div class="recommendation ${opp.risk === 'high' ? 'high' : 'medium'}">
+                        <strong>${opp.type}:</strong> ${opp.recommendation}<br>
+                        <small>Savings: $${opp.monthly_savings}/month | Risk: ${opp.risk}</small>
+                    </div>`;
+                });
+            }
+
+            return html;
+        }
+
+        function renderOperationsAnalysis(data) {
+            let html = '<h2>🗺️ Operations Analysis</h2>';
+            
+            html += `<div class="metric">
+                <div class="metric-value">${data.total_resources || 0}</div>
+                <div class="metric-label">TOTAL RESOURCES</div>
+            </div>`;
+
+            if (data.resource_types) {
+                Object.entries(data.resource_types).forEach(([type, count]) => {
+                    html += `<div class="metric">
+                        <div class="metric-value">${count}</div>
+                        <div class="metric-label">${type}</div>
+                    </div>`;
+                });
+            }
+
+            if (data.security_analysis?.security_issues) {
+                html += '<h3>🔒 Security Issues</h3>';
+                data.security_analysis.security_issues.forEach(issue => {
+                    html += `<div class="recommendation ${issue.severity}">
+                        <strong>${issue.security_group_id}:</strong> ${issue.issue}<br>
+                        <small>Recommendation: ${issue.recommendation}</small>
+                    </div>`;
+                });
+            }
+
+            return html;
+        }
+
+        function renderArchitecture(data) {
+            let html = '<h2>🏗️ Generated Architecture</h2>';
+            
+            html += `<div class="metric">
+                <div class="metric-value">$${data.estimated_monthly_cost}</div>
+                <div class="metric-label">ESTIMATED COST</div>
+            </div>`;
+
+            html += `<div class="metric">
+                <div class="metric-value">${data.security_score}</div>
+                <div class="metric-label">SECURITY SCORE</div>
+            </div>`;
+
+            html += `<div class="metric">
+                <div class="metric-value">${data.reliability_score}</div>
+                <div class="metric-label">RELIABILITY SCORE</div>
+            </div>`;
+
+            if (data.analysis?.recommendations) {
+                html += '<h3>📋 Architecture Recommendations</h3>';
+                data.analysis.recommendations.forEach(rec => {
+                    html += `<div class="recommendation medium">${rec}</div>`;
+                });
+            }
+
+            html += '<h3>📄 CloudFormation Template</h3>';
+            html += `<pre>${data.cloudformation_template}</pre>`;
+
+            return html;
+        }
+
+        async function runFullAnalysis() {
+            showResults();
+            const result = await callAgent('/orchestrate/full-analysis', {});
+            displayResults(result);
+        }
+
+        async function runCostAnalysis() {
+            showResults();
+            const result = await callAgent('/cost/analyze', { action: 'full_analysis' });
+            displayResults(result);
+        }
+
+        async function runOperationsAnalysis() {
+            showResults();
+            const result = await callAgent('/operations/analyze', { action: 'map_dependencies' });
+            displayResults(result);
+        }
+
+        async function runArchitectureDesign() {
+            showResults();
+            const result = await callAgent('/infrastructure/generate', { 
+                action: 'generate_architecture',
+                requirements: { type: 'web_app_3tier', scale: 'medium' }
+            });
+            displayResults(result);
+        }
+    </script>
+</body>
+</html>

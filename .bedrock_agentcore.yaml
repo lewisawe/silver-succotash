@@ -1,0 +1,30 @@
+default_agent: cost_intelligence_agent_us_east_1
+agents:
+  cost_intelligence_agent_us_east_1:
+    name: cost_intelligence_agent_us_east_1
+    entrypoint: agent/cost_intelligence_agent.py
+    platform: linux/arm64
+    container_runtime: docker
+    aws:
+      execution_role: arn:aws:iam::120651511769:role/AmazonBedrockAgentCoreSDKRuntime-us-east-1-855b4a1565
+      execution_role_auto_create: false
+      account: '120651511769'
+      region: us-east-1
+      ecr_repository: 120651511769.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-cost_intelligence_agent_us_east_1
+      ecr_auto_create: false
+      network_configuration:
+        network_mode: PUBLIC
+      protocol_configuration:
+        server_protocol: HTTP
+      observability:
+        enabled: true
+    bedrock_agentcore:
+      agent_id: cost_intelligence_agent_us_east_1-13dj5h9wEy
+      agent_arn: arn:aws:bedrock-agentcore:us-east-1:120651511769:runtime/cost_intelligence_agent_us_east_1-13dj5h9wEy
+      agent_session_id: af0bf265-8834-401d-993c-0062b91467ac
+    codebuild:
+      project_name: bedrock-agentcore-cost_intelligence_agent_us_east_1-builder
+      execution_role: arn:aws:iam::120651511769:role/AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-855b4a1565
+      source_bucket: bedrock-agentcore-codebuild-sources-120651511769-us-east-1
+    authorizer_configuration: null
+    oauth_configuration: null
