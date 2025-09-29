@@ -1,4 +1,0 @@
-bedrock-agentcore
-strands
-boto3
-typing-extensions
